@@ -21,6 +21,7 @@ Validate builds against CIS Benchmarks, Cyber Essentials, NIST 800-53, ISO 27001
 - [Requirements](#requirements)
 - [Quick Start](#quick-start)
 - [Usage](#usage)
+- [macOS Auditor](#macos-auditor)
 - [Custom Checks](#custom-checks)
 - [Framework Mappings](#framework-mappings)
 - [Fleet Auditing](#fleet-auditing)
@@ -148,6 +149,75 @@ The script produces a colour-coded console summary and writes four output files 
 | `dcc3`  | UK MoD DCC Level 3 checks only |
 
 > **Tip:** Running without the `-Audit` parameter is equivalent to `-Audit all`.
+
+## macOS Auditor
+
+`audit-macos.sh` is the macOS counterpart to `audit.ps1`. It performs a comparable
+local security audit on macOS endpoints using only tools shipped with the operating
+system (no external dependencies), and produces the same family of reports:
+colour console output plus `.txt`, `.csv`, `.json`, `.html`, and a CycloneDX `.json` SBOM.
+
+It evaluates the device against aligned controls for **CIS macOS Benchmark Level 1 & 2**,
+**Cyber Essentials / CE+**, **NCSC**, **MDM / Device Management** posture, and
+**UK MoD DCC Level 2 & 3**, applying the same scoring model as the Windows tool
+(per-framework scores with thresholds, an overall score, and a severity-weighted score).
+
+The script is **MDM-aware**: when it detects MDM enrolment (Jamf, Microsoft Intune,
+Kandji, or generic DEP/MDM), cloud-managed controls are annotated so that centrally
+managed settings do not produce misleading failures against local policy baselines.
+
+### Requirements
+
+- macOS (Intel or Apple Silicon)
+- Stock `/bin/bash` (the script avoids Bash 4+ features for compatibility)
+- Run with `sudo` for full coverage — many checks (firmware password, Remote Login,
+  network time, security auditing) require root. Without root the script degrades
+  gracefully and marks affected checks as warnings.
+
+### Quick Start
+
+```bash
+# 1. Make the script executable
+chmod +x audit-macos.sh
+
+# 2. Run a full audit (recommended with sudo for complete coverage)
+sudo ./audit-macos.sh
+```
+
+### Usage
+
+```bash
+# Full audit across all frameworks (default)
+sudo ./audit-macos.sh
+
+# Single-framework audits
+sudo ./audit-macos.sh --audit ce      # Cyber Essentials / CE+ only
+sudo ./audit-macos.sh --audit cis1    # CIS Level 1 only
+sudo ./audit-macos.sh --audit cis2    # CIS Level 2 only
+sudo ./audit-macos.sh --audit ncsc    # NCSC alignment only
+sudo ./audit-macos.sh --audit mdm     # MDM / Device Management only
+sudo ./audit-macos.sh --audit dcc2    # UK MoD DCC Level 2 only
+sudo ./audit-macos.sh --audit dcc3    # UK MoD DCC Level 3 only
+
+# Delta / trend comparison against a previous JSON export
+sudo ./audit-macos.sh --previous-report ./PriorDevice_Audit_2026-01-01_09-00-00.json
+```
+
+### Audit Scope Options (macOS)
+
+| Option  | Scope |
+|---------|-------|
+| `all`   | Full audit across all frameworks *(default)* |
+| `ce`    | Cyber Essentials / CE+ checks only |
+| `cis1`  | CIS Level 1 checks only |
+| `cis2`  | CIS Level 2 checks only |
+| `ncsc`  | NCSC alignment checks only |
+| `mdm`   | MDM / Device Management checks only |
+| `dcc2`  | UK MoD DCC Level 2 checks only |
+| `dcc3`  | UK MoD DCC Level 3 checks only |
+
+> **Note:** On macOS the `entra` scope used by the Windows tool is replaced by `mdm`,
+> reflecting the device-management equivalents (Jamf, Intune, Kandji) on Apple platforms.
 
 ## Custom Checks
 
